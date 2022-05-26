@@ -1,7 +1,4 @@
 from scraper import browse
-from selenium import webdriver
-from webdriver_manager.chrome import ChromeDriverManager 
-from selenium.webdriver.chrome.service import Service
 
 class Asset:
     def __init__(self, link):
@@ -14,18 +11,13 @@ class Asset:
         self.bid, self.ask = res[1], res[0]
 
     def opportunity(self):
-        if abs(self.bid[0][0][0]) > abs(self.ask[0][0][0]):
+        if abs(self.bid[0][0][0]) > abs(self.ask[0][0][0]): # compare value
             print(f'Bid: {self.bid[0]}. Ask: {self.ask[0]}. \n Arbitrage possible.')
             return True
-        print('No arbitrage present.')
+        print(f'Bid: {self.bid[0]}. Ask: {self.ask[0]}. \n No arbitrage possible.')
         return False
 
     def arbitrage(self):
         if self.opportunity:
+            # execute trade
             return True
-
-link = 'https://next.backpack.tf/stats?item=Mann%20Co.%20Supply%20Crate%20Key&quality=Unique'
-
-a = Asset(link)
-a.update()
-a.opportunity()
