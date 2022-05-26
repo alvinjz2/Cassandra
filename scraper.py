@@ -4,12 +4,9 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 from heapq import heappush
 
-link = "https://backpack.tf/stats/Unique/Mann%20Co.%20Supply%20Crate%20Key/Tradable/Craftable"
-link2 = 'https://next.backpack.tf/stats?item=Mann%20Co.%20Supply%20Crate%20Key&quality=Unique'
-driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
-driver.implicitly_wait(5)
-
-def browse(driver, link):
+def browse(link):
+    driver =  webdriver.Chrome(service=Service(executable_path=ChromeDriverManager().install()))
+    driver.implicitly_wait(5)
     driver.get(link)
     buy, sell = [], []
     orders = driver.find_elements(By.CLASS_NAME, 'col-lg-6')
@@ -25,7 +22,5 @@ def browse(driver, link):
                 heappush(buy, order) if not i else heappush(sell, order)
     return buy, sell
     
-browse(driver, link2)
-driver.quit()
 
 
