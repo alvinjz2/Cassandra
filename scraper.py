@@ -2,14 +2,16 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager 
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from heapq import heappush
 
 def browse(link):
     driver =  webdriver.Chrome(service=Service(executable_path=ChromeDriverManager().install()))
-    driver.implicitly_wait(5)
     driver.get(link)
-    buy, sell = [], []
+    elem = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, 'col-lg-6')))
     orders = driver.find_elements(By.CLASS_NAME, 'col-lg-6')
+    buy, sell = [], []
     for i, o in enumerate(orders): # first set is buy, second is sell
         listings = o.find_elements(By.CLASS_NAME, 'listing')
         for j, listing in enumerate(listings):
