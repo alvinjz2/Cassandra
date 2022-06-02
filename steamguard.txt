@@ -1,0 +1,5 @@
+{
+    "steamid": "wxlydf",
+    "shared_secret": "UmHpWrsHMOUgWfjncJBobD8iqds=",
+    "identity_secret": "i48bNdh8nEI8J2j99SzQBBSsAo4=",
+}
