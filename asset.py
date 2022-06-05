@@ -12,13 +12,8 @@ class Asset:
     def opportunity(self):
         self.update()
         bid, ask = abs(self.bids[0][0][0]), abs(self.asks[0][0][0])
+        bid_offer, ask_offer =  self.bids[0][1], self.asks[0][1]
+        bid_t, ask_t = self.bids[0][0][1], self.asks[0][0][1]
         if bid > ask:
-            print(f'Bid: {bid}. Ask: {ask}. \n Arbitrage possible.')
-            return True
-        print(f'Bid: {bid}. Ask: {ask}. \n No arbitrage possible.')
-        return False
-
-    def arbitrage(self):
-        if self.opportunity:
-            # execute trade
-            return True
+            return (True, bid, ask, bid_t, ask_t, bid_offer, ask_offer)
+        return (False, bid, ask, bid_t, ask_t, bid_offer, ask_offer)
