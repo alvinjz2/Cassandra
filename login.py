@@ -1,13 +1,20 @@
 import os
-import steam.webauth as wa
+import json
+from steam.guard import SteamAuthenticator
+from steam.client import SteamClient
 from dotenv import load_dotenv
 
 load_dotenv()
-user = wa.WebAuth(os.environ.get("id"))
+username, password = os.environ.get('id'), os.environ.get('password')
+secrets = json.load(open('steamguard.json'))
+sa = SteamAuthenticator(secrets)
+tfa = sa.get_code()
+
+client = SteamClient()
 
 try:
-    session = user.cli_login(os.environ.get("password"))
-    session.get('https://store.steampowered.com/account/history')
+    client.login(username=username, password=password, two_factor_code=tfa)
     print('Success')
 except:
-    print('Unable to get session')
+    print('Could not login')
+
