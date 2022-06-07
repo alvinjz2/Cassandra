@@ -1,5 +1,6 @@
 from scraper import browse
 from utils import partner_to_64id
+
 class Asset:
     def __init__(self, link):
         self.link = link
