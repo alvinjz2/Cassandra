@@ -13,8 +13,8 @@ class AssetClass:
     def opportunity(self):
         self.update()
         bid, ask = abs(self.bids[0][0][0]), abs(self.asks[0][0][0])
-        tup = (False, bid, ask, self.bids[0][0][1], self.asks[0][0][1],
-                     self.bids[0][1], self.asks[0][0][1], partner_to_64id(self.bids[0][1]), partner_to_64id(self.asks[0][1]))
+        ret = [False, bid, ask, self.bids[0][0][1], self.asks[0][0][1],
+                     self.bids[0][1], self.asks[0][0][1], partner_to_64id(self.bids[0][1]), partner_to_64id(self.asks[0][1])]
         if bid > ask:
-           tup[0] = True
-        return tup
+           ret[0] = True
+        return tuple(ret)

@@ -29,7 +29,7 @@ def resize_offer(capital, val):
             capital['metals']['scrap'].pop(0)
     ref = capital['metals']['ref'][0 : int(whole)]
     capital['metals']['ref'] = capital['metals']['ref'][int(whole) :]
-    return ref, rec, scrap
+    return ref + rec + scrap
 
 class Option(Enum):
     opportunity = 0
