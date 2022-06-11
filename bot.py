@@ -1,5 +1,5 @@
 from steampy.client import SteamClient, Asset
-from utils import Option, item_class_ids,pure_assets, resize_offer, pure_balance
+from utils import item_class_ids, pure_assets, resize_offer, pure_balance, partner_to_64id
 import math
 
 class Bot:
@@ -15,12 +15,6 @@ class Bot:
         self.game = game
         self.capital = self.get_capital(self.client.steam_guard['steamid'])
         self.balance = pure_balance(len(self.capital['metals']['ref']), len(self.capital['metals']['rec']), len(self.capital['metals']['scrap']))
-
-    def get_pure(self):
-        return self.pure
-
-    def get_capital(self):
-        return self.capital
 
     def get_capital(self, steam64id):
         inventory = self.client.get_partner_inventory(steam64id, self.game)
