@@ -2,7 +2,7 @@ from enum import Enum
 import math
 def partner_to_64id(trade_url):
     x = trade_url.split('?')[1].split('&')[0].split('=')[1]
-    return (1 << 56) | (1 << 52) | (1 << 32) | int(x)
+    return str((1 << 56) | (1 << 52) | (1 << 32) | int(x))
 
 def pure_balance(ref, rec, scrap):
     rem_scrap = scrap % 3
@@ -12,7 +12,7 @@ def pure_balance(ref, rec, scrap):
     return t_ref + REC_VALUE * rem_rec + SCRAP_VALUE * rem_scrap
 
 def resize_offer(capital, val):
-    frac, whole = math.modf(15.44)
+    frac, whole = math.modf(val)
     frac = round(frac, 2)
     ref, rec, scrap = [], [], []
     for rec_asset in capital['metals']['rec']:
