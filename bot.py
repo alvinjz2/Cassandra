@@ -16,6 +16,7 @@ class Bot:
         self.capital = self.get_capital(self.steam_id)
         self.balance = pure_balance(len(self.capital['metals']['ref']), len(self.capital['metals']['rec']), len(self.capital['metals']['scrap']))
 
+
     def get_capital(self, steam64id):
         inventory = self.client.get_partner_inventory(steam64id, self.game)
         capital = pure_assets
@@ -31,16 +32,18 @@ class Bot:
                 capital['other']['key'].append(Asset(item, self.game))
         return capital
 
+
     def find_item(self, steam64id, quantity, id):
-        inventory = self.client.get_partner_inventory(steam64id, self.game)
+        inventory = requests.get(f'https://steamcommunity.com/inventory/{steam64id}/440/2').json()
         capital, count = [], 0
-        tag = 'classid'
-        for item in inventory.keys():
+
+        for item in inventory['assets']:
             if count < quantity:
-                if int(inventory[item][tag]) == item_class_ids[id]:
-                    capital.append(Asset(item, self.game))
+                if int(item['classid']) == item_class_ids[id]:
+                    capital.append(Asset(item['assetid'], self.game))
                     count += 1
         return capital
+
 
     def trade_buy(self, price, item, partner_url):
         partner = self.find_item(partner_to_64id(partner_url), 1, item)
@@ -51,6 +54,7 @@ class Bot:
         except Exception as e:
             print(f'Could not send offer. \n Error message: {e}')
     
+
     def trade_sell(self, price, item, partner_url):
         own = self.find_item(self.steam_id, 1, item)
         partner = resize_offer(self.client.get_capital(partner_to_64id(partner_url)), price)
@@ -62,13 +66,6 @@ class Bot:
     
 
     def arbitrage(self, asset):
-        # inventory = self.client.get_partner_inventory(self.steam_id, self.game)
-        # print(inventory)
-        # # r = requests.get('https://steamcommunity.com/inventory/76561198178338321/440/2')
-        # # print(r.text)
-        # self.trade_sell(1, 'ref', 'https://steamcommunity.com/tradeoffer/new/?partner=164820724&token=agoMNKiO')
-        #self.trade_buy(self.balance, 'key', 'https://steamcommunity.com/tradeoffer/new/?partner=164820724&token=agoMNKiO')
-        self.trade_sell(1, 'ref', 'https://steamcommunity.com/tradeoffer/new/?partner=164820724&token=agoMNKiO')
         return None
        
 
