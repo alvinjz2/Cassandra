@@ -1,15 +1,50 @@
-from enum import Enum
 import math
+import requests
+from misc import REC_VALUE, SCRAP_VALUE, pure_assets, item_class_ids
+from steampy.utils import GameOptions
+from steampy.client import Asset
+
 def partner_to_64id(trade_url):
     x = trade_url.split('?')[1].split('&')[0].split('=')[1]
     return str((1 << 56) | (1 << 52) | (1 << 32) | int(x))
 
-def pure_balance(ref, rec, scrap):
+
+def pure_balance(steam64id):
+    capital = get_tf2capital(steam64id)
+    ref, rec, scrap = len(capital['metals']['ref']), len(capital['metals']['rec']), len(capital['metals']['scrap'])
     rem_scrap = scrap % 3
     t_rec = rec + scrap // 3
     rem_rec = t_rec % 3
     t_ref = ref + t_rec // 3
     return t_ref + REC_VALUE * rem_rec + SCRAP_VALUE * rem_scrap
+
+
+def find_tf2item(steam64id, quantity, id):
+    inventory = requests.get(f'https://steamcommunity.com/inventory/{steam64id}/440/2?l=english&count=5000').json()
+    items, count = [], 0
+    for item in inventory['assets']:
+        if count >= quantity:
+            break
+        if int(item['classid']) == item_class_ids[id]:
+            items.append(Asset(item['assetid'], GameOptions.TF2))
+            count += 1
+    return items
+
+
+def get_tf2capital(steam64id):
+    inventory = requests.get(f'https://steamcommunity.com/inventory/{steam64id}/440/2?l=english&count=5000').json()
+    inv, game = pure_assets, GameOptions.TF2
+    for item in inventory['assets']:
+        if int(item['classid']) == item_class_ids['ref']:
+            inv['metals']['ref'].append(Asset(item['assetid'], game))
+        if int(item['classid']) == item_class_ids['rec']:
+            inv['metals']['rec'].append(Asset(item['assetid'], game))
+        if int(item['classid']) == item_class_ids['scrap']:
+            inv['metals']['scrap'].append(Asset(item['assetid'], game))
+        if int(item['classid']) == item_class_ids['key']:
+            inv['other']['key'].append(Asset(item['assetid'], game))
+    return inv
+
 
 def resize_offer(capital, val):
     frac, whole = math.modf(val)
@@ -20,31 +55,14 @@ def resize_offer(capital, val):
             frac -= REC_VALUE
             frac = round(frac, 2)
             rec.append(rec_asset)
-            capital['metals']['rec'].pop(0)
+        else:
+            break
     for scrap_asset in capital['metals']['scrap']:
-        if frac - SCRAP_VALUE >= 0:
+        if frac - SCRAP_VALUE > 0:
             frac -= SCRAP_VALUE
             frac = round(frac, 2)
             scrap.append(scrap_asset)
-            capital['metals']['scrap'].pop(0)
+        else:
+            break
     ref = capital['metals']['ref'][0 : int(whole)]
-    capital['metals']['ref'] = capital['metals']['ref'][int(whole) :]
     return ref + rec + scrap
-
-class Option(Enum):
-    opportunity = 0
-    bid = 1
-    ask = 2
-    bid_currency = 3
-    ask_currency = 4
-    bid_url = 5
-    ask_url = 6
-    bid_64id = 7
-    ask64_id = 8
-   
-# Look to implement database catalog with name/ids in the future
-item_class_ids = {'scrap': 2675, 'key': 101785959, 'ref': 2674, 'rec': 5564, '2675': 'scrap', '101785959' : 'key', '2674' : 'ref', '5564' : 'rec'}
-currency = ['ref', 'rec', 'scrap', 'key']
-pure_assets = {'metals': {'ref': [], 'rec': [], 'scrap': []}, 'other': {'key' : []}}
-REC_VALUE = 0.33
-SCRAP_VALUE = 0.11
