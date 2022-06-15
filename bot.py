@@ -9,19 +9,22 @@ class Bot:
             print('Logged in')
         except Exception as e:
             print(f'Could not login.\n Error message: {e}')
-
         self.steam_id = self.client.steam_guard['steamid']
-        self.pure = pure_balance(self.steam_id)
-        
+        self.game = game
+        self.capital = get_tf2capital(self.steam_id)
+        self.balance = pure_balance(len(self.capital['metals']['ref']), len(self.capital['metals']['rec']), len(self.capital['metals']['scrap']))
+
+
     def trade_buy(self, quantity, item, price, partner_url):
         partner = find_tf2item(partner_to_64id(partner_url), quantity, item)
-        own = resize_offer(get_tf2capital(self.steam_id), price)
+        own = resize_offer(self.capital, price)
         try:
             offer = self.client.make_offer_with_url(items_from_me=own, items_from_them=partner, trade_offer_url=partner_url, 
                                                     case_sensitive=True, message='Test sending trade offers')
-        except Exception as e:
-            print(f'Could not send offer. \n Error message: {e}')
-    
+            print(offer)
+        except:
+            return
+
 
     def trade_sell(self, quantity, item, price, partner_url):
         own = find_tf2item(self.steam_id, quantity, item)
@@ -29,9 +32,9 @@ class Bot:
         try:
             offer = self.client.make_offer_with_url(items_from_me=own, items_from_them=partner, trade_offer_url=partner_url, 
                                                     case_sensitive=True, message='Test sending trade offers')
-        except Exception as e:
-            print(f'Could not send offer. \n Error message: {e}')
-    
+            print(offer)
+        except:
+            return
 
     def arbitrage(self, asset):
         return None

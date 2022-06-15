@@ -3,15 +3,14 @@ import requests
 from misc import REC_VALUE, SCRAP_VALUE, pure_assets, item_class_ids
 from steampy.utils import GameOptions
 from steampy.client import Asset
+from copy import deepcopy
 
 def partner_to_64id(trade_url):
     x = trade_url.split('?')[1].split('&')[0].split('=')[1]
     return str((1 << 56) | (1 << 52) | (1 << 32) | int(x))
 
 
-def pure_balance(steam64id):
-    capital = get_tf2capital(steam64id)
-    ref, rec, scrap = len(capital['metals']['ref']), len(capital['metals']['rec']), len(capital['metals']['scrap'])
+def pure_balance(ref, rec, scrap):
     rem_scrap = scrap % 3
     t_rec = rec + scrap // 3
     rem_rec = t_rec % 3
@@ -20,7 +19,7 @@ def pure_balance(steam64id):
 
 
 def find_tf2item(steam64id, quantity, id):
-    inventory = requests.get(f'https://steamcommunity.com/inventory/{steam64id}/440/2?l=english&count=5000').json()
+    inventory = request_helper(steam64id)
     items, count = [], 0
     for item in inventory['assets']:
         if count >= quantity:
@@ -32,24 +31,24 @@ def find_tf2item(steam64id, quantity, id):
 
 
 def get_tf2capital(steam64id):
-    inventory = requests.get(f'https://steamcommunity.com/inventory/{steam64id}/440/2?l=english&count=5000').json()
-    inv, game = pure_assets, GameOptions.TF2
+    inventory = request_helper(steam64id)
+    capital, game = deepcopy(pure_assets), GameOptions.TF2
     for item in inventory['assets']:
         if int(item['classid']) == item_class_ids['ref']:
-            inv['metals']['ref'].append(Asset(item['assetid'], game))
-        if int(item['classid']) == item_class_ids['rec']:
-            inv['metals']['rec'].append(Asset(item['assetid'], game))
-        if int(item['classid']) == item_class_ids['scrap']:
-            inv['metals']['scrap'].append(Asset(item['assetid'], game))
-        if int(item['classid']) == item_class_ids['key']:
-            inv['other']['key'].append(Asset(item['assetid'], game))
-    return inv
+            capital['metals']['ref'].append(Asset(item['assetid'], game))
+        elif int(item['classid']) == item_class_ids['rec']:
+            capital['metals']['rec'].append(Asset(item['assetid'], game))
+        elif int(item['classid']) == item_class_ids['scrap']:
+            capital['metals']['scrap'].append(Asset(item['assetid'], game))
+        elif int(item['classid']) == item_class_ids['key']:
+            capital['other']['key'].append(Asset(item['assetid'], game))
+    return capital
 
 
 def resize_offer(capital, val):
     frac, whole = math.modf(val)
     frac = round(frac, 2)
-    ref, rec, scrap = [], [], []
+    rec, scrap = [], []
     for rec_asset in capital['metals']['rec']:
         if frac - REC_VALUE > 0:
             frac -= REC_VALUE
@@ -66,3 +65,7 @@ def resize_offer(capital, val):
             break
     ref = capital['metals']['ref'][0 : int(whole)]
     return ref + rec + scrap
+
+
+def request_helper(steam64id):
+    return requests.get(f'https://steamcommunity.com/inventory/{steam64id}/440/2?l=english&count=5000').json()
