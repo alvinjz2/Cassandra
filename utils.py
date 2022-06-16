@@ -27,6 +27,8 @@ def find_tf2item(steam64id, quantity, id):
         if int(item['classid']) == item_class_ids[id]:
             items.append(Asset(item['assetid'], GameOptions.TF2))
             count += 1
+    if len(items) < quantity: 
+        return False
     return items
 
 
@@ -50,20 +52,22 @@ def resize_offer(capital, val):
     frac = round(frac, 2)
     rec, scrap = [], []
     for rec_asset in capital['metals']['rec']:
-        if frac - REC_VALUE > 0:
+        if frac - REC_VALUE >= 0:
             frac -= REC_VALUE
             frac = round(frac, 2)
             rec.append(rec_asset)
         else:
             break
     for scrap_asset in capital['metals']['scrap']:
-        if frac - SCRAP_VALUE > 0:
+        if frac - SCRAP_VALUE >= 0:
             frac -= SCRAP_VALUE
             frac = round(frac, 2)
             scrap.append(scrap_asset)
         else:
             break
     ref = capital['metals']['ref'][0 : int(whole)]
+    if pure_balance(len(ref), len(rec), len(scrap)) != val:
+        return False
     return ref + rec + scrap
 
 
