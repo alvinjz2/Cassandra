@@ -5,7 +5,7 @@ import asyncio
 class AssetClass:
     def __init__(self, link):
         self.link = link
-        self.bids, self.asks = self.update(self.link)
+        self.bids, self.asks = self.update()
         
     def update(self):
         res = browse(self.link)
