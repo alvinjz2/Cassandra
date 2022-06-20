@@ -1,10 +1,11 @@
 from Scraper import browse
 from utils import partner_to_64id
+import asyncio
 
 class AssetClass:
     def __init__(self, link):
         self.link = link
-        self.bids, self.asks = None, None
+        self.bids, self.asks = self.update(self.link)
         
     def update(self):
         res = browse(self.link)
