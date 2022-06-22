@@ -63,41 +63,65 @@ class Bot:
     
     
     def arbitrage(self, asset):
-        max_wait = 5000
-        bid, ask = abs(asset.bids[0][0][0]), abs(asset.asks[0][0][0])
-        buyer_url, seller_url = self.bids[0][1], self.asks[0][1]
-        while bid > ask:
-            buy_offer = self.trade_buy(1, 'key', ask, seller_url)[0]
-            if not buy_offer:
-                print(f'Didn\'t buy item.')
-                asset.asks.heappop()
-                ask, seller_url =  abs(asset.asks[0][0][0]), self.asks[0][1]
+        max_wait = 15000
+        buy_accepted, sell_accepted = False, False
+        while (len(asset.bids) > 0 and len(asset.asks) > 0) and abs(asset.bids[0][0][0]) > abs(asset.asks[0][0][0]):
+            check = self.crosscheck(asset.asks[0][1], asset.bids[0][1], 1, 'key', abs(asset.bids[0][0][0]))
+            buy_amount = self.buy_from(abs(asset.asks[0][0][0]))
+            if check[0] == 'Buyer Issue':
+                print(f'Buyer issue, {check[1]} not enough pure')
+                try:
+                    print(heappop(asset.bids))
+                except IndexError:
+                    raise IndexError
+            if check[0] == 'Seller Issue':
+                print(f'Seller issue, {check[1]} did not have the item')
+                try:
+                    print(heappop(asset.asks))
+                except IndexError:
+                    raise IndexError
+            if check[0] == 'Buyer Issue' or check[0] == 'Seller Issue':
                 continue
-            s = time.process_time_ns()
-            while self.client.get_trade_offers_summary()['response']['newly_accepted_sent_count'] == 0:
-                t1 = time.process_time_ns() - s
-                if t1 > max_wait:
-                    print('Took too long, abandon buy trade')
-                    asset.asks.heappop()
-                    ask, seller_url =  abs(asset.asks[0][0][0]), self.asks[0][1]
+            buy_order = self.execute_trade(buy_amount[1], check[1], asset.asks[0][1])
+            s = time.perf_counter_ns()
+            while time.perf_counter_ns() - s < max_wait:
+                if self.client.get_trade_offers_summary()['response']['newly_accepted_sent_count'] > 0:
+                    buy_accepted = True
+                    break
+            if not buy_accepted:
+                print(f'Max time exceeded')
+                heappop(asset.asks)
+                try:
+                    self.client.cancel_trade_offer(buy_order[1]['tradeofferid'])
+                except:
+                    print(f'Couldn\'t cancel trade offer')
                     continue
-            sell_offer = self.trade_sell(1, 'key', bid, buyer_url)[0]
-            if not sell_offer:
-                print(f'Didn\'t sell item.')
-                asset.bids.heappop()
-                bid, buyer_url =  abs(asset.bids[0][0][0]), self.bids[0][1]
-                continue
-            s = time.process_time_ns()
-            while self.client.get_trade_offers_summary()['newly_accepted_sent_count'] == 0:
-                t2 = time.process_time_ns() - s
-                if t2 > max_wait:
-                    print(f'Didn\'t sell item.')
-                    asset.bids.heappop()
-                    bid, buyer_url =  abs(asset.bids[0][0][0]), self.bids[0][1]
-                    continue
-            print(buy_offer['success'] and sell_offer['success'])
+            while buy_accepted and not sell_accepted:
+                if (len(asset.bids) > 0 and len(asset.asks) > 0) and abs(asset.bids[0][0][0]) > abs(asset.asks[0][0][0]):
+                    check = self.crosscheck(asset.asks[0][1], asset.bids[0][1], 1, 'key', abs(asset.bids[0][0][0]))
+                    sell_to = self.sell_to(1, 'key')
+                    sell_order = self.execute_trade(sell_to[1], check[2], asset.bids[0][1])
+                    s = time.perf_counter_ns()
+                    while time.perf_counter_ns() - s < max_wait:
+                        if self.client.get_trade_offers_summary()['newly_accepeted_sent_count'] > 0:
+                            sell_accepted = True
+                            break
+                    if not sell_accepted:
+                        heappop(asset.asks)
+                        try:
+                            self.client.cancel_trade_offer(sell_order[1]['tradeofferid'])
+                        except:
+                            print(f'Couldn\'t cancel trade offer')
+                            continue
+                else:
+                    print(f'Bought key but no arbitrage')
+                    return
+            if buy_accepted and sell_accepted:
+                print(f'Arbitraged')
+            else:
+                print(f'No arbitrage at all')
+            
 
-    
     def worker(self, name):
         return None
 
