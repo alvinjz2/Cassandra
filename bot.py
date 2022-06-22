@@ -18,37 +18,49 @@ class Bot:
         self.balance = pure_balance(len(self.capital['metals']['ref']), len(self.capital['metals']['rec']), len(self.capital['metals']['scrap']))
         self.tasks = asyncio.Queue()
 
-    def trade_buy(self, quantity, item, price, partner_url):
-        start, end = time.time(), None
-        own = resize_offer(self.capital, price)
-        partner = find_tf2item(partner_to_64id(partner_url), quantity, item)
-        if not partner or not own:
-            print('Insuffient funds')
+
+    def buy_from(self, price):
+        start, end = time.process_time_ns(), None
+        buy_from =  resize_offer(self.capital, price)      
+        end = time.process_time_ns() - start
+        if buy_from :
+            return end, buy_from
+        if not buy_from:
+            print(f'Couldn\'t buy the item')
             return False
+
+
+    def sell_to(self, quantity, item):
+        start, end = time.process_time_ns(), None  
+        sell_to = find_tf2item(self.steam_id, quantity, item)
+        end = time.process_time_ns() - start
+        if sell_to:
+            return end, sell_to
+        if not sell_to:
+            print(f'Could not sell {quantity} of {item}.')
+        return False
+
+
+    def crosscheck(self, seller_url, buyer_url, quantity, item, buy_price):
+        start, end = time.process_time_ns(), None
+        seller = find_tf2item(partner_to_64id(seller_url), quantity, item)
+        buyer = resize_offer(get_tf2capital(partner_to_64id(buyer_url)), buy_price)
+        end = time.process_time_ns() - start
+        if seller and buyer:
+            return end, seller, buyer
+        if not seller:
+            return 'Seller Issue', seller_url
+        if not buyer:
+            return 'Buyer Issue', buyer_url
+
+
+    def execute_trade(self, own, partner, url):
         try:
-            offer = self.client.make_offer_with_url(items_from_me=own, items_from_them=partner, trade_offer_url=partner_url, case_sensitive=True)
-            end = time.time()
-            print(offer)
-            return end - start
+            offer = self.client.make_offer_with_url(items_from_me=own, items_from_them=partner, trade_offer_url=url, case_sensitive=True)
+            return (True, offer)
         except:
-            return None
-
-
-    def trade_sell(self, quantity, item, price, partner_url):
-        start, end = time.time(), None
-        own = find_tf2item(self.steam_id, quantity, item)
-        partner = resize_offer(get_tf2capital(partner_to_64id(partner_url)), price)
-        if not partner or not own:
-            print('Insuffient funds')
             return False
-        try:
-            offer = self.client.make_offer_with_url(items_from_me=own, items_from_them=partner, trade_offer_url=partner_url, case_sensitive=True)
-            end = time.time()
-            print(offer)
-            return end - start
-        except:
-            return None
-
+    
     
     def arbitrage(self, asset):
         max_wait = 5000
