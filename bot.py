@@ -63,10 +63,11 @@ class Bot:
     
     
     def arbitrage(self, asset):
-        max_wait = 15000
+        max_wait = 1.5e10
         buy_accepted, sell_accepted = False, False
         while (len(asset.bids) > 0 and len(asset.asks) > 0) and abs(asset.bids[0][0][0]) > abs(asset.asks[0][0][0]):
             check = self.crosscheck(asset.asks[0][1], asset.bids[0][1], 1, 'key', abs(asset.bids[0][0][0]))
+            print(f'seller url:{asset.asks[0][1]}, buyer url:{asset.bids[0][1]}, 1, key, buy price:{abs(asset.bids[0][0][0])}')
             buy_amount = self.buy_from(abs(asset.asks[0][0][0]))
             if check[0] == 'Buyer Issue':
                 print(f'Buyer issue, {check[1]} not enough pure')
@@ -81,6 +82,7 @@ class Bot:
                 except IndexError:
                     raise IndexError
             if check[0] == 'Buyer Issue' or check[0] == 'Seller Issue':
+                print('Not buying')
                 continue
             buy_order = self.execute_trade(buy_amount[1], check[1], asset.asks[0][1])
             s = time.perf_counter_ns()
