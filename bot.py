@@ -3,6 +3,7 @@ from utils import pure_balance, partner_to_64id, find_tf2item, get_tf2capital, r
 from heapq import heappop
 import time
 import asyncio
+import datetime
 
 class Bot:
     def __init__(self, username, password, api_key, steamguard, game):
@@ -82,22 +83,27 @@ class Bot:
                 except IndexError:
                     raise IndexError
             if check[0] == 'Buyer Issue' or check[0] == 'Seller Issue':
-                print('Not buying')
+                print('Not attempting')
                 continue
-            buy_order = self.execute_trade(buy_amount[1], check[1], asset.asks[0][1])
             s = time.perf_counter_ns()
-            while time.perf_counter_ns() - s < max_wait:
-                if self.client.get_trade_offers_summary()['response']['newly_accepted_sent_count'] > 0:
-                    buy_accepted = True
-                    break
+            buy_order = self.execute_trade(buy_amount[1], check[1], asset.asks[0][1])
+            print(f'sent offer at {datetime.datetime.now()}')
+            e = time.perf_counter_ns()
+            print(f'time to process: {check[0] + (e-s)}')
+            s = time.perf_counter_ns()
+            time.sleep(30)
+            if self.client.get_trade_offers_summary()['response']['newly_accepted_sent_count'] > 0:
+                buy_accepted = True
+                # break
             if not buy_accepted:
                 print(f'Max time exceeded')
                 heappop(asset.asks)
                 try:
                     self.client.cancel_trade_offer(buy_order[1]['tradeofferid'])
+                    print(f'canceled offer at {datetime.datetime.now()}')
                 except:
                     print(f'Couldn\'t cancel trade offer')
-                    continue
+                continue
             while buy_accepted and not sell_accepted:
                 if (len(asset.bids) > 0 and len(asset.asks) > 0) and abs(asset.bids[0][0][0]) > abs(asset.asks[0][0][0]):
                     check = self.crosscheck(asset.asks[0][1], asset.bids[0][1], 1, 'key', abs(asset.bids[0][0][0]))
@@ -105,7 +111,7 @@ class Bot:
                     sell_order = self.execute_trade(sell_to[1], check[2], asset.bids[0][1])
                     s = time.perf_counter_ns()
                     while time.perf_counter_ns() - s < max_wait:
-                        if self.client.get_trade_offers_summary()['newly_accepeted_sent_count'] > 0:
+                        if self.client.get_trade_offers_summary()['response']['newly_accepted_sent_count'] > 0:
                             sell_accepted = True
                             break
                     if not sell_accepted:
