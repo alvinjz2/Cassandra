@@ -64,7 +64,7 @@ class Bot:
     
     
     def arbitrage(self, asset):
-        max_wait = 1.5e10
+        max_wait = 15
         buy_accepted, sell_accepted = False, False
         while (len(asset.bids) > 0 and len(asset.asks) > 0) and abs(asset.bids[0][0][0]) > abs(asset.asks[0][0][0]):
             check = self.crosscheck(asset.asks[0][1], asset.bids[0][1], 1, 'key', abs(asset.bids[0][0][0]))
@@ -90,11 +90,15 @@ class Bot:
             print(f'sent offer at {datetime.datetime.now()}')
             e = time.perf_counter_ns()
             print(f'time to process: {check[0] + (e-s)}')
-            s = time.perf_counter_ns()
-            time.sleep(30)
-            if self.client.get_trade_offers_summary()['response']['newly_accepted_sent_count'] > 0:
-                buy_accepted = True
-                # break
+            s = time.time()
+            
+            while self.client.get_trade_offers_summary()['response']['newly_accepted_sent_count'] == 0 and time.time() - s < max_wait:
+                if self.client.get_trade_offers_summary()['response']['newly_accepted_sent_count'] > 0:
+                    buy_accepted = True
+                    break
+                time.sleep(0.1)
+            if buy_accepted:
+                print(f'Purchased item')
             if not buy_accepted:
                 print(f'Max time exceeded')
                 heappop(asset.asks)
@@ -102,7 +106,7 @@ class Bot:
                     self.client.cancel_trade_offer(buy_order[1]['tradeofferid'])
                     print(f'canceled offer at {datetime.datetime.now()}')
                 except:
-                    print(f'Couldn\'t cancel trade offer')
+                    print(f'Couldn\'t cancel trade offer, likely due to offer not existing')
                 continue
             while buy_accepted and not sell_accepted:
                 if (len(asset.bids) > 0 and len(asset.asks) > 0) and abs(asset.bids[0][0][0]) > abs(asset.asks[0][0][0]):
