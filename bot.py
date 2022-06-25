@@ -1,9 +1,10 @@
-from steampy.client import SteamClient
+from steampy.client import SteamClient, SteamChat
 from utils import pure_balance, partner_to_64id, find_tf2item, get_tf2capital, resize_offer
 from heapq import heappop
 import time
 import asyncio
 import datetime
+import threading
 
 #all bots use the same script, maybe add them and type command
 # need to keep more scrap on hand to not miss any trade offers.
@@ -64,7 +65,16 @@ class Bot:
         except:
             return False
     
-    
+    def message_offer(self, partner_url, method, item):
+        partner_id = partner_to_64id(partner_url)
+        offer = f'!{method} {item}'
+        try:
+            SteamChat.send_message(partner_id, offer)
+            return True
+        except:
+            print(f'Could not send message')
+
+            
     def arbitrage(self, asset):
         max_wait = 15
         buy_accepted, sell_accepted = False, False
