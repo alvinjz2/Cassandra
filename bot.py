@@ -5,6 +5,8 @@ import time
 import asyncio
 import datetime
 
+#all bots use the same script, maybe add them and type command
+# need to keep more scrap on hand to not miss any trade offers.
 class Bot:
     def __init__(self, username, password, api_key, steamguard, game):
         self.client = SteamClient(api_key)
@@ -24,10 +26,10 @@ class Bot:
         start, end = time.process_time_ns(), None
         buy_from =  resize_offer(self.capital, price)      
         end = time.process_time_ns() - start
-        if buy_from :
+        if buy_from:
             return end, buy_from
         if not buy_from:
-            print(f'Couldn\'t buy the item')
+            print(f'Couldn\'t buy the item priced at {price}.')
             return False
 
 
@@ -70,6 +72,9 @@ class Bot:
             check = self.crosscheck(asset.asks[0][1], asset.bids[0][1], 1, 'key', abs(asset.bids[0][0][0]))
             print(f'seller url:{asset.asks[0][1]}, buyer url:{asset.bids[0][1]}, 1, key, buy price:{abs(asset.bids[0][0][0])}')
             buy_amount = self.buy_from(abs(asset.asks[0][0][0]))
+            if not buy_amount:
+                print(heappop(asset.asks))
+                continue
             if check[0] == 'Buyer Issue':
                 print(f'Buyer issue, {check[1]} not enough pure')
                 try:
