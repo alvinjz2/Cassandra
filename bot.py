@@ -1,4 +1,4 @@
-from steampy.client import SteamClient, SteamChat
+from steampy.client import SteamClient
 from utils import pure_balance, partner_to_64id, find_tf2item, get_tf2capital, resize_offer
 from heapq import heappop
 import time
@@ -65,14 +65,13 @@ class Bot:
         except:
             return False
     
-    def message_offer(self, partner_url, method, item):
+    def message_offer(self, partner_url, method, quantity, item):
         partner_id = partner_to_64id(partner_url)
-        offer = f'!{method} {item}'
-        try:
-            SteamChat.send_message(partner_id, offer)
-            return True
-        except:
-            print(f'Could not send message')
+        offer = f'!{method} {quantity} {item}'
+        print(offer)
+        resp = self.client.chat.send_message(partner_id, offer)
+        print(resp)
+        return True
 
             
     def arbitrage(self, asset):
