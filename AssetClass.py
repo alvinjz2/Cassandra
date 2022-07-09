@@ -19,3 +19,6 @@ class AssetClass:
         if bid > ask:
            ret[0] = True
         return tuple(ret)
+
+    def worker(self):
+        return None

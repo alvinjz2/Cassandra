@@ -5,6 +5,7 @@ import time
 import asyncio
 import datetime
 import threading
+from multiprocessing import Process, Pool, cpu_count
 
 #all bots use the same script, maybe add them and type command
 # need to keep more scrap on hand to not miss any trade offers.
@@ -18,9 +19,12 @@ class Bot:
             print(f'Could not login')
         self.steam_id = self.client.steam_guard['steamid']
         self.game = game
+        self.pool = Pool(processes=len(os.sched_getaffinity(0)))
         self.capital = get_tf2capital(self.steam_id)
         self.balance = pure_balance(len(self.capital['metals']['ref']), len(self.capital['metals']['rec']), len(self.capital['metals']['scrap']))
-        self.tasks = asyncio.Queue()
+
+    def __del__(self):
+        self.pool.close()
 
 
     def buy_from(self, price):
@@ -61,6 +65,7 @@ class Bot:
     def execute_trade(self, own, partner, url):
         try:
             offer = self.client.make_offer_with_url(items_from_me=own, items_from_them=partner, trade_offer_url=url, case_sensitive=True)
+            print(f'sent offer at {datetime.datetime.now()}')
             return (True, offer)
         except:
             return False
@@ -78,9 +83,12 @@ class Bot:
         max_wait = 15
         buy_accepted, sell_accepted = False, False
         while (len(asset.bids) > 0 and len(asset.asks) > 0) and abs(asset.bids[0][0][0]) > abs(asset.asks[0][0][0]):
-            check = self.crosscheck(asset.asks[0][1], asset.bids[0][1], 1, 'key', abs(asset.bids[0][0][0]))
+            s = time.perf_counter_ns()
+            #check = self.crosscheck(asset.asks[0][1], asset.bids[0][1], 1, 'key', abs(asset.bids[0][0][0]))
+            check = self.pool.apply_async(self.crosscheck(), args=[asset.asks[0][1], asset.bids[0][1], 1, 'key', abs(asset.bids[0][0][0])]).get()
             print(f'seller url:{asset.asks[0][1]}, buyer url:{asset.bids[0][1]}, 1, key, buy price:{abs(asset.bids[0][0][0])}')
-            buy_amount = self.buy_from(abs(asset.asks[0][0][0]))
+            #buy_amount = self.buy_from(abs(asset.asks[0][0][0]))
+            buy_amount = self.pool.apply_async(self.buy_from(), args=abs(asset.asks[0][0][0])).get()
             if not buy_amount:
                 print(heappop(asset.asks))
                 continue
@@ -99,12 +107,12 @@ class Bot:
             if check[0] == 'Buyer Issue' or check[0] == 'Seller Issue':
                 print('Not attempting')
                 continue
-            s = time.perf_counter_ns()
-            buy_order = self.execute_trade(buy_amount[1], check[1], asset.asks[0][1])
-            print(f'sent offer at {datetime.datetime.now()}')
             e = time.perf_counter_ns()
             print(f'time to process: {check[0] + (e-s)}')
-            s = time.time()
+
+            buy_order = self.execute_trade(buy_amount[1], check[1], asset.asks[0][1])
+            
+            print(f'time to send offer: {time.perf_counter_ns-e}')
             
             while self.client.get_trade_offers_summary()['response']['newly_accepted_sent_count'] == 0 and time.time() - s < max_wait:
                 if self.client.get_trade_offers_summary()['response']['newly_accepted_sent_count'] > 0:
@@ -124,9 +132,17 @@ class Bot:
                 continue
             while buy_accepted and not sell_accepted:
                 if (len(asset.bids) > 0 and len(asset.asks) > 0) and abs(asset.bids[0][0][0]) > abs(asset.asks[0][0][0]):
-                    check = self.crosscheck(asset.asks[0][1], asset.bids[0][1], 1, 'key', abs(asset.bids[0][0][0]))
-                    sell_to = self.sell_to(1, 'key')
+                    s = time.perf_counter_ns()
+                    #check = self.crosscheck(asset.asks[0][1], asset.bids[0][1], 1, 'key', abs(asset.bids[0][0][0]))
+                    check = self.pool.apply_async(self.crosscheck(), args=[asset.asks[0][1], asset.bids[0][1], 1, 'key', abs(asset.bids[0][0][0])]).get()
+                    #sell_to = self.sell_to(1, 'key')
+                    sell_to = self.pool.apply_async(self.sell_to(), args=[1,'key']).get()
+                    e = time.perf_counter_ns()
+                    print(f'time to process: {check[0] + (e-s)}')
+                    
                     sell_order = self.execute_trade(sell_to[1], check[2], asset.bids[0][1])
+                    
+                    print(f'time to send offer: {time.perf_counter_ns-e}')
                     s = time.perf_counter_ns()
                     while time.perf_counter_ns() - s < max_wait:
                         if self.client.get_trade_offers_summary()['response']['newly_accepted_sent_count'] > 0:
@@ -147,9 +163,6 @@ class Bot:
             else:
                 print(f'No arbitrage at all')
             
-
-    def worker(self, name):
-        return None
 
 
 

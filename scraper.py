@@ -10,6 +10,7 @@ import time
 buy, sell = [], []
 global_listings = []
 def scrape_listing_sell(index):
+    
     actions = global_listings[index].find_element(By.CLASS_NAME, 'listing__details__actions')
     if actions.text == 'BOT': # filter listings to only get bots
         price = tuple(global_listings[index].find_element(By.TAG_NAME, 'a').find_element(By.CLASS_NAME, 'item__price').text.split(' '))
@@ -27,8 +28,6 @@ def scrape_listing_buy(index):
         order = (price, trade_offer)
         heappush(buy, order) 
 
-def scrape_orders(ret, orders):
-    listing = orders.find_elements(By.CLASS_NAME, 'listing')
 
 def browse(link):
     s = time.perf_counter_ns()
