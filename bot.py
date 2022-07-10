@@ -84,11 +84,11 @@ class Bot:
         buy_accepted, sell_accepted = False, False
         while (len(asset.bids) > 0 and len(asset.asks) > 0) and abs(asset.bids[0][0][0]) > abs(asset.asks[0][0][0]):
             s = time.perf_counter_ns()
-            #check = self.crosscheck(asset.asks[0][1], asset.bids[0][1], 1, 'key', abs(asset.bids[0][0][0]))
-            check = self.pool.apply_async(self.crosscheck(), args=[asset.asks[0][1], asset.bids[0][1], 1, 'key', abs(asset.bids[0][0][0])]).get()
+            check = self.crosscheck(asset.asks[0][1], asset.bids[0][1], 1, 'key', abs(asset.bids[0][0][0]))
+            #check = self.pool.apply_async(self.crosscheck(), args=[asset.asks[0][1], asset.bids[0][1], 1, 'key', abs(asset.bids[0][0][0])]).get()
             print(f'seller url:{asset.asks[0][1]}, buyer url:{asset.bids[0][1]}, 1, key, buy price:{abs(asset.bids[0][0][0])}')
-            #buy_amount = self.buy_from(abs(asset.asks[0][0][0]))
-            buy_amount = self.pool.apply_async(self.buy_from(), args=abs(asset.asks[0][0][0])).get()
+            buy_amount = self.buy_from(abs(asset.asks[0][0][0]))
+            #buy_amount = self.pool.apply_async(self.buy_from(), args=abs(asset.asks[0][0][0])).get()
             if not buy_amount:
                 print(heappop(asset.asks))
                 continue
@@ -133,10 +133,10 @@ class Bot:
             while buy_accepted and not sell_accepted:
                 if (len(asset.bids) > 0 and len(asset.asks) > 0) and abs(asset.bids[0][0][0]) > abs(asset.asks[0][0][0]):
                     s = time.perf_counter_ns()
-                    #check = self.crosscheck(asset.asks[0][1], asset.bids[0][1], 1, 'key', abs(asset.bids[0][0][0]))
-                    check = self.pool.apply_async(self.crosscheck(), args=[asset.asks[0][1], asset.bids[0][1], 1, 'key', abs(asset.bids[0][0][0])]).get()
-                    #sell_to = self.sell_to(1, 'key')
-                    sell_to = self.pool.apply_async(self.sell_to(), args=[1,'key']).get()
+                    check = self.crosscheck(asset.asks[0][1], asset.bids[0][1], 1, 'key', abs(asset.bids[0][0][0]))
+                    #check = self.pool.apply_async(self.crosscheck(), args=[asset.asks[0][1], asset.bids[0][1], 1, 'key', abs(asset.bids[0][0][0])]).get()
+                    sell_to = self.sell_to(1, 'key')
+                    #sell_to = self.pool.apply_async(self.sell_to(), args=[1,'key']).get()
                     e = time.perf_counter_ns()
                     print(f'time to process: {check[0] + (e-s)}')
                     
