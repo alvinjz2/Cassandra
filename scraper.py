@@ -9,8 +9,10 @@ from multiprocessing import Pool
 import time
 buy, sell = [], []
 global_listings = []
+driver =  webdriver.Chrome(service=Service(executable_path=ChromeDriverManager().install()))
+driver.get(link)
 def scrape_listing_sell(index):
-    
+    orders = driver.find_elements(By.CLASS_NAME, 'col-lg-6')
     actions = global_listings[index].find_element(By.CLASS_NAME, 'listing__details__actions')
     if actions.text == 'BOT': # filter listings to only get bots
         price = tuple(global_listings[index].find_element(By.TAG_NAME, 'a').find_element(By.CLASS_NAME, 'item__price').text.split(' '))
@@ -20,6 +22,7 @@ def scrape_listing_sell(index):
         heappush(sell, order) 
 
 def scrape_listing_buy(index):
+    orders = driver.find_elements(By.CLASS_NAME, 'col-lg-6')
     actions = global_listings[index].find_element(By.CLASS_NAME, 'listing__details__actions')
     if actions.text == 'BOT': # filter listings to only get bots
         price = tuple(global_listings[index].find_element(By.TAG_NAME, 'a').find_element(By.CLASS_NAME, 'item__price').text.split(' '))
