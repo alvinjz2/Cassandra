@@ -14,7 +14,7 @@ driver.get(link)
 def scrape_listing_sell(index):
     orders = driver.find_elements(By.CLASS_NAME, 'col-lg-6')
     actions = global_listings[index].find_element(By.CLASS_NAME, 'listing__details__actions')
-    if actions.text == 'BOT': # filter listings to only get bots
+    if actions.text == 'BOT':
         price = tuple(global_listings[index].find_element(By.TAG_NAME, 'a').find_element(By.CLASS_NAME, 'item__price').text.split(' '))
         price = (float(price[0]) *-1, price[1]) 
         trade_offer = actions.find_element(By.TAG_NAME, 'a').get_attribute('href')
@@ -24,7 +24,7 @@ def scrape_listing_sell(index):
 def scrape_listing_buy(index):
     orders = driver.find_elements(By.CLASS_NAME, 'col-lg-6')
     actions = global_listings[index].find_element(By.CLASS_NAME, 'listing__details__actions')
-    if actions.text == 'BOT': # filter listings to only get bots
+    if actions.text == 'BOT': 
         price = tuple(global_listings[index].find_element(By.TAG_NAME, 'a').find_element(By.CLASS_NAME, 'item__price').text.split(' '))
         price = (float(price[0]), price[1])
         trade_offer = actions.find_element(By.TAG_NAME, 'a').get_attribute('href')
