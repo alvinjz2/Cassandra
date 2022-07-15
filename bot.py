@@ -6,7 +6,7 @@ import asyncio
 import datetime
 import threading
 from multiprocessing import Process, Pool, cpu_count
-
+import os
 #all bots use the same script, maybe add them and type command
 # need to keep more scrap on hand to not miss any trade offers.
 class Bot:
