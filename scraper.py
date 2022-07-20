@@ -6,42 +6,27 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from heapq import heappush
-from multiprocessing import Pool
+
 import time
 import threading
 buy, sell = [], []
 
-driver =  webdriver.Chrome(service=Service(executable_path=ChromeDriverManager().install()))
-
-# def scrape_listing_sell(index):
-#     orders = driver.find_elements(By.CLASS_NAME, 'col-lg-6')
-#     actions = global_listings[index].find_element(By.CLASS_NAME, 'listing__details__actions')
-#     if actions.text == 'BOT':
-#         price = tuple(global_listings[index].find_element(By.TAG_NAME, 'a').find_element(By.CLASS_NAME, 'item__price').text.split(' '))
-#         price = (float(price[0]) *-1, price[1]) 
-#         trade_offer = actions.find_element(By.TAG_NAME, 'a').get_attribute('href')
-#         order = (price, trade_offer)
-#         heappush(sell, order) 
-
-# def scrape_listing_buy(index):
-#     orders = driver.find_elements(By.CLASS_NAME, 'col-lg-6')
-#     actions = global_listings[index].find_element(By.CLASS_NAME, 'listing__details__actions')
-#     if actions.text == 'BOT': 
-#         price = tuple(global_listings[index].find_element(By.TAG_NAME, 'a').find_element(By.CLASS_NAME, 'item__price').text.split(' '))
-#         price = (float(price[0]), price[1])
-#         trade_offer = actions.find_element(By.TAG_NAME, 'a').get_attribute('href')
-#         order = (price, trade_offer)
-#         heappush(buy, order) 
-
+def sub_worker(item, method, i):
+    if method == "price":
+        price = tuple(item.find_element(By.TAG_NAME, 'a').find_element(By.CLASS_NAME, 'item__price').text.split(' '))
+        price = (float(price[0]) *-1, price[1]) if i else (float(price[0]), price[1])
+        return price
+    elif method == "actions":
+        trade_offer = item.find_element(By.TAG_NAME, 'a').get_attribute('href')
+        return trade_offer
 
 def worker(listing, i):
+    executor = ThreadPoolExecutor(max_workers=10)
     actions = listing.find_element(By.CLASS_NAME, 'listing__details__actions')
     if actions.text == 'BOT': # filter listings to only get bots
-        price = tuple(listing.find_element(By.TAG_NAME, 'a').find_element(By.CLASS_NAME, 'item__price').text.split(' '))
-        price = (float(price[0]) *-1, price[1]) if i else (float(price[0]), price[1])
-        trade_offer = actions.find_element(By.TAG_NAME, 'a').get_attribute('href')
-        order = (price, trade_offer)
-
+        future_price = executor.submit(sub_worker, listing, "price", i)
+        future_trade_offer = executor.submit(sub_worker, actions, "actions", i)
+        order = (future_price.result(), future_trade_offer.result())
         threading.Lock().acquire()
         heappush(buy, order) if not i else heappush(sell, order)
         threading.Lock().release()
