@@ -41,6 +41,7 @@ def worker(listing, i):
         price = (float(price[0]) *-1, price[1]) if i else (float(price[0]), price[1])
         trade_offer = actions.find_element(By.TAG_NAME, 'a').get_attribute('href')
         order = (price, trade_offer)
+
         threading.Lock().acquire()
         heappush(buy, order) if not i else heappush(sell, order)
         threading.Lock().release()
@@ -70,6 +71,7 @@ def browse2(link):
     s = time.perf_counter_ns()
     driver =  webdriver.Chrome(service=Service(executable_path=ChromeDriverManager().install()))
     driver.get(link)
+
     elem = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, 'col-lg-6')))
     orders = driver.find_elements(By.CLASS_NAME, 'col-lg-6')
     print(f'time elapsed to scrape initially: {time.perf_counter_ns() - s}')
@@ -78,7 +80,7 @@ def browse2(link):
     for i, o in enumerate(orders): # first set is buy, second is sell
         listings = o.find_elements(By.CLASS_NAME, 'listing')
         for j, listing in enumerate(listings):
-            executor.submit(worker, listing, i, link)
+            executor.submit(worker, listing, i)
     executor.shutdown()
     print(f'time elapsed, multithreading: {time.perf_counter_ns() - s}')
     print(buy)
